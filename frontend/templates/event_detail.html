@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Событие — Рынок недвижимости{% endblock %}
+
+{% block content %}
+<div x-data="eventDetail({{ event_id }})" x-init="init()">
+  <a href="/dashboard" class="back-link">← Назад к дашборду</a>
+
+  <div x-show="event" class="event-detail">
+    <div class="event-meta">
+      <span class="event-category" x-text="catLabel(event?.category)"></span>
+      <span x-show="event?.is_key_event" class="badge-key">ключевое</span>
+      <span class="event-score" :class="scoreClass(event?.impact_score)"
+            x-text="scoreLabel(event?.impact_score)"></span>
+    </div>
+    <h1 x-text="event?.title"></h1>
+    <p class="event-summary" x-text="event?.summary"></p>
+    <blockquote x-show="event?.reasoning" x-text="event?.reasoning"></blockquote>
+    <div class="event-links">
+      <a :href="event?.url" target="_blank" x-show="event?.url">Источник →</a>
+    </div>
+    <span class="event-date" x-text="formatDate(event?.published_at)"></span>
+  </div>
+  <p x-show="!event && !loading">Событие не найдено</p>
+  <p x-show="loading">Загрузка...</p>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+<script>
+function eventDetail(eventId) {
+  return {
+    event: null,
+    loading: true,
+    async init() {
+      try {
+        const r = await fetch(`/api/events/${eventId}`);
+        this.event = await r.json();
+      } finally {
+        this.loading = false;
+      }
+    },
+    catLabel: window.catLabel,
+    scoreClass: window.scoreClass,
+    scoreLabel: window.scoreLabel,
+    formatDate: window.formatDate,
+  };
+}
+</script>
+{% endblock %}

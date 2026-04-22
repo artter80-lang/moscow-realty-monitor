@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд — Рынок недвижимости Москвы{% endblock %}
+
+{% block content %}
+<div x-data="dashboard()" x-init="init()">
+
+  <!-- Индикаторы -->
+  <section class="indicators">
+    <div class="indicator-card">
+      <div class="indicator-label">Ключевая ставка ЦБ</div>
+      <div class="indicator-value" x-text="summary.current_rate ? summary.current_rate + '%' : '—'"></div>
+      <div class="indicator-trend"
+           :class="{'trend-up': summary.rate_trend === 'up', 'trend-down': summary.rate_trend === 'down'}">
+        <span x-show="summary.rate_trend === 'up'">▲ растёт</span>
+        <span x-show="summary.rate_trend === 'down'">▼ снижается</span>
+        <span x-show="summary.rate_trend === 'stable'">— стабильно</span>
+      </div>
+    </div>
+
+    <div class="indicator-card">
+      <div class="indicator-label">Событий за 7 дней</div>
+      <div class="indicator-value" x-text="summary.events_last_7d ?? '—'"></div>
+    </div>
+
+    <div class="indicator-card">
+      <div class="indicator-label">Ключевых событий</div>
+      <div class="indicator-value highlight" x-text="summary.key_events_last_7d ?? '—'"></div>
+    </div>
+
+    <div class="indicator-card">
+      <div class="indicator-label">Влияние на цены (7д)</div>
+      <div class="impact-pills">
+        <span class="pill pill-up" x-text="'▲ ' + (summary.impact_distribution?.up ?? 0)"></span>
+        <span class="pill pill-neutral" x-text="'— ' + (summary.impact_distribution?.neutral ?? 0)"></span>
+        <span class="pill pill-down" x-text="'▼ ' + (summary.impact_distribution?.down ?? 0)"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- График ставки ЦБ -->
+  <section class="chart-section">
+    <h2>Динамика ключевой ставки ЦБ РФ (2018 — настоящее время)</h2>
+    <div class="chart-wrap">
+      <canvas id="rateChart"></canvas>
+      <button class="zoom-reset-btn" id="zoomResetBtn" onclick="resetChartZoom()" title="Сбросить масштаб">⟳ Сбросить</button>
+    </div>
+    <p class="chart-hint">🖱 Колёсико — масштаб · Зажать и тянуть — перемещение · Ctrl+колёсико — горизонтальный зум</p>
+    <div class="chart-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#6366f1"></span>Ключевая ставка ЦБ (левая ось)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Цена м² новостроек Москвы, тыс. ₽ (правая ось)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Негативные события</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#34d399"></span>Позитивные события</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#f97316"></span>Санкции / риски</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Глобальные события</span>
+    </div>
+  </section>
+
+  <!-- Ключевые события -->
+  <section class="key-events-section">
+    <h2>Ключевые события</h2>
+    <div class="events-list" x-show="latestKeyEvents.length > 0">
+      <template x-for="event in latestKeyEvents" :key="event.id">
+        <div class="event-card event-card--key"
+             :class="dirClass(event.price_direction)">
+          <div class="event-meta">
+            <span class="event-category" x-text="catLabel(event.category)"></span>
+            <span class="event-score" :class="scoreClass(event.impact_score)"
+                  x-text="scoreLabel(event.impact_score)"></span>
+          </div>
+          <a class="event-title" :href="event.url" target="_blank" x-text="event.title"></a>
+          <p class="event-reasoning" x-text="event.reasoning"></p>
+          <span class="event-date" x-text="formatDate(event.published_at)"></span>
+        </div>
+      </template>
+    </div>
+    <p x-show="latestKeyEvents.length === 0" class="empty-state">Ключевых событий пока нет</p>
+  </section>
+
+  <!-- Лента всех событий -->
+  <section class="timeline-section">
+    <div class="timeline-header">
+      <h2>Лента событий</h2>
+      <div class="filters">
+        <select x-model="filter.category" @change="loadEvents(true)">
+          <option value="">Все категории</option>
+          <option value="cbr_rate">ЦБ РФ: ставка</option>
+          <option value="mortgage">Ипотека</option>
+          <option value="regulation">Регулирование</option>
+          <option value="demand">Спрос</option>
+          <option value="supply">Предложение</option>
+          <option value="macro">Макро</option>
+        </select>
+        <select x-model="filter.price_direction" @change="loadEvents(true)">
+          <option value="">Все направления</option>
+          <option value="up">Рост цен ▲</option>
+          <option value="neutral">Нейтральное —</option>
+          <option value="down">Снижение цен ▼</option>
+        </select>
+        <label>
+          <input type="checkbox" x-model="filter.key_only" @change="loadEvents(true)" />
+          Только ключевые
+        </label>
+      </div>
+    </div>
+
+    <div class="events-list" x-show="events.length > 0">
+      <template x-for="event in events" :key="event.id">
+        <div class="event-card" :class="dirClass(event.price_direction)">
+          <div class="event-meta">
+            <span class="event-category" x-text="catLabel(event.category)"></span>
+            <span x-show="event.is_key_event" class="badge-key">ключевое</span>
+            <span class="event-score" :class="scoreClass(event.impact_score)"
+                  x-text="scoreLabel(event.impact_score)"></span>
+          </div>
+          <a class="event-title" :href="event.url" target="_blank" x-text="event.title"></a>
+          <p class="event-reasoning" x-show="event.reasoning" x-text="event.reasoning"></p>
+          <span class="event-date" x-text="formatDate(event.published_at)"></span>
+        </div>
+      </template>
+    </div>
+    <p x-show="events.length === 0 && !loading" class="empty-state">Событий не найдено</p>
+    <p x-show="loading" class="loading">Загрузка...</p>
+
+    <div class="pagination" x-show="total > pageSize">
+      <button @click="prevPage()" :disabled="offset === 0">← Назад</button>
+      <span x-text="pageLabel()"></span>
+      <button @click="nextPage()" :disabled="offset + pageSize >= total">Вперёд →</button>
+    </div>
+  </section>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

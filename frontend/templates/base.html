@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Рынок недвижимости Москвы{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <span class="logo">Недвижимость Москвы</span>
+      <nav>
+        <a href="/dashboard">Дашборд</a>
+        <a href="/api/docs" target="_blank">API</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      Данные: ЦБ РФ, IRN.ru, РБК Недвижимость, ЦИАН · Анализ: Claude AI
+    </div>
+  </footer>
+</body>
+</html>
