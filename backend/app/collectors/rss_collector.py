@@ -9,10 +9,10 @@ from app.utils.http_client import fetch
 logger = logging.getLogger(__name__)
 
 RSS_SOURCES = [
-    ("IRN.ru", "https://www.irn.ru/rss/"),
-    ("РБК Недвижимость", "https://realty.rbc.ru/rss/news/"),
-    ("ЦИАН Новости", "https://www.cian.ru/rss/news/"),
-    ("Домофонд", "https://www.domofond.ru/rss/news/"),
+    ("Лента.ру Недвижимость", "https://lenta.ru/rss/news/realty"),
+    ("РИА Новости Недвижимость", "https://realty.ria.ru/export/rss2/index.xml"),
+    ("РБК", "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"),
+    ("ТАСС", "https://tass.ru/rss/v2.xml"),
 ]
 
 KEYWORDS = [
